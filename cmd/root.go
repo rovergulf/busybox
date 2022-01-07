@@ -71,6 +71,7 @@ func init() {
 	viper.BindPFlag("log_json", rootCmd.Flags().Lookup("log_json"))
 	viper.BindPFlag("log_stacktrace", rootCmd.Flags().Lookup("log_stacktrace"))
 	viper.BindPFlag("jaeger_addr", rootCmd.Flags().Lookup("jaeger_addr"))
+	viper.BindPFlag("listen_addr", rootCmd.Flags().Lookup("listen-addr"))
 	viper.BindPFlag("env", rootCmd.Flags().Lookup("env"))
 }
 
