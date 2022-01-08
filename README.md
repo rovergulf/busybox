@@ -22,7 +22,7 @@ go build -o busybox
 ./busybox --help
 
 # run server
-./busybox --listen-addr=:8081 --log_json=true
+./busybox --listen-addr=:8081
 ```
 
 Docker image:
