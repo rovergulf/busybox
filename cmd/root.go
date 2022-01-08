@@ -80,8 +80,8 @@ func init() {
 	rootCmd.Flags().Bool("log-stacktrace", false, "Enable logger stacktrace")
 	rootCmd.Flags().String("listen-addr", ":8081", "TCP address listen to")
 
-	viper.BindPFlag("log_json", rootCmd.Flags().Lookup("log_json"))
-	viper.BindPFlag("log_stacktrace", rootCmd.Flags().Lookup("log_stacktrace"))
+	viper.BindPFlag("log_json", rootCmd.Flags().Lookup("log-json"))
+	viper.BindPFlag("log_stacktrace", rootCmd.Flags().Lookup("log-stacktrace"))
 	viper.BindPFlag("jaeger_addr", rootCmd.Flags().Lookup("jaeger_addr"))
 	viper.BindPFlag("listen_addr", rootCmd.Flags().Lookup("listen-addr"))
 	viper.BindPFlag("env", rootCmd.Flags().Lookup("env"))
