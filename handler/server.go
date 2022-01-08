@@ -15,6 +15,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -127,6 +128,18 @@ func (h *Handler) Run() error {
 	listenAddr := viper.GetString("listen_addr")
 	h.logger.Infow("Starting HTTP Server", "listen_addr", listenAddr)
 	return http.ListenAndServe(listenAddr, h)
+}
+
+func (h *Handler) GracefulShutdown(sig string) {
+	if h.logger != nil {
+		h.logger.Warnf("Shutdown signal '%s' received", sig)
+	}
+
+	if h.closer != nil {
+		h.closer.Close()
+	}
+
+	os.Exit(0)
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

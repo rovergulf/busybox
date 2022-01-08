@@ -21,6 +21,8 @@ import (
 	"github.com/rovergulf/busybox/handler"
 	"github.com/spf13/cobra"
 	"os"
+	"os/signal"
+	"syscall"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
@@ -34,10 +36,20 @@ var rootCmd = &cobra.Command{
 	Short: "REST Server debug tool",
 	Long: `Rovergulf Engineers Busybox - is a simple REST server can be used
 as a incoming HTTP request debug tool`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
 	RunE: func(cmd *cobra.Command, args []string) error {
+		//ctx, cancel := context.WithCancel(context.Background())
+		//defer cancel()
+
 		h := new(handler.Handler)
+
+		exitChan := make(chan os.Signal, 1)
+		signal.Notify(exitChan, os.Interrupt, os.Kill, syscall.SIGTERM)
+
+		go func() {
+			sig := <-exitChan
+			h.GracefulShutdown(sig.String())
+		}()
+
 		return h.Run()
 	},
 }
@@ -62,11 +74,11 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().String("jaeger_trace", os.Getenv("JAEGER_TRACE"), "Jaeger tracing collector address")
+	rootCmd.Flags().String("jaeger-trace", os.Getenv("JAEGER_TRACE"), "Jaeger tracing collector address")
 	rootCmd.Flags().String("env", "dev", "App environment")
-	rootCmd.Flags().Bool("log_json", false, "Enable JSON logging")
-	rootCmd.Flags().Bool("log_stacktrace", true, "Enable logger stacktrace")
-	rootCmd.Flags().String("listen-addr", ":8080", "TCP address listen to")
+	rootCmd.Flags().Bool("log-json", false, "Enable JSON logging")
+	rootCmd.Flags().Bool("log-stacktrace", false, "Enable logger stacktrace")
+	rootCmd.Flags().String("listen-addr", ":8081", "TCP address listen to")
 
 	viper.BindPFlag("log_json", rootCmd.Flags().Lookup("log_json"))
 	viper.BindPFlag("log_stacktrace", rootCmd.Flags().Lookup("log_stacktrace"))
@@ -94,8 +106,6 @@ func initConfig() {
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
-
-	viper.SetDefault("listen_addr", ":8081")
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
