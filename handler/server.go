@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
-	"github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/config"
 	"github.com/uber/jaeger-lib/metrics/prometheus"
 	"go.uber.org/zap"
@@ -121,7 +119,7 @@ func (h *Handler) Run() error {
 
 	r.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet)
 	r.HandleFunc("/health", h.healthCheck).Methods(http.MethodGet)
-	r.HandleFunc("/", h.mainHandler).Methods(http.MethodGet)
+	r.HandleFunc("/debug", h.mainHandler).Methods(http.MethodGet)
 
 	h.router = r
 
