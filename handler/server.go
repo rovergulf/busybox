@@ -186,10 +186,13 @@ func (h *Handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) mainHandler(w http.ResponseWriter, r *http.Request) {
-	result := make(map[string]interface{})
+	var result []interface{}
 	for name, values := range r.Header {
 		h.logger.Infof("%s: %s", name, values)
-		result[name] = r.Header.Values(name)
+		result = append(result, map[string]interface{}{
+			"name":  name,
+			"value": r.Header.Values(name),
+		})
 	}
 
 	writeResponse(w, result)
