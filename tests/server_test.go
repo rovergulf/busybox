@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+func init() {
+	viper.SetDefault("listen_addr", ":8081")
+	_ = runTestServer()
+}
+
 func runTestServer() *handler.Handler {
 	viper.AutomaticEnv()
 	h := new(handler.Handler)
@@ -24,8 +29,6 @@ func runTestServer() *handler.Handler {
 }
 
 func TestServerHealth(t *testing.T) {
-	viper.SetDefault("listen_addr", ":8081")
-	_ = runTestServer()
 	// wait until server goroutine is completed to run
 	time.Sleep(1 * time.Second)
 
@@ -50,10 +53,7 @@ func TestServerHealth(t *testing.T) {
 }
 
 func TestServerDebugRequest(t *testing.T) {
-	viper.SetDefault("listen_addr", ":8082")
-	_ = runTestServer()
-
-	res, err := http.Get("http://127.0.0.1:8082/debug")
+	res, err := http.Get("http://127.0.0.1:8081/debug")
 	if err != nil {
 		t.Fatalf("Failed to complete request: %s", err)
 	}

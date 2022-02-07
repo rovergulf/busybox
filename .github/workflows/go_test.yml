@@ -17,4 +17,4 @@ jobs:
       - name: Gofmt
         run: go fmt ./...
       - name: Test
-        run: go test ./tests
+        run: go test -v ./tests
