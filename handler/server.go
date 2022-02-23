@@ -18,6 +18,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	_ "net/http/pprof"
 )
 
 const (
@@ -119,6 +121,7 @@ func (h *Handler) Run() error {
 
 	r := mux.NewRouter()
 
+	r.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
 	r.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet)
 	r.HandleFunc("/health", h.healthCheck).Methods(http.MethodGet)
 	r.HandleFunc("/debug", h.mainHandler).Methods(http.MethodGet)
