@@ -121,7 +121,9 @@ func (h *Handler) Run() error {
 
 	r := mux.NewRouter()
 
-	r.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
+	if viper.GetBool("enable_profiling") {
+		r.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
+	}
 	r.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet)
 	r.HandleFunc("/health", h.healthCheck).Methods(http.MethodGet)
 	r.HandleFunc("/debug", h.mainHandler).Methods(http.MethodGet)

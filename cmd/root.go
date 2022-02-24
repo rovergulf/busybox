@@ -79,12 +79,14 @@ func init() {
 	rootCmd.Flags().Bool("log-json", false, "Enable JSON logging")
 	rootCmd.Flags().Bool("log-stacktrace", false, "Enable logger stacktrace")
 	rootCmd.Flags().String("listen-addr", ":8081", "TCP address listen to")
+	rootCmd.Flags().Bool("enable-profiling", false, "Enable http/pprof handler support")
 
 	viper.BindPFlag("log_json", rootCmd.Flags().Lookup("log-json"))
 	viper.BindPFlag("log_stacktrace", rootCmd.Flags().Lookup("log-stacktrace"))
 	viper.BindPFlag("jaeger_addr", rootCmd.Flags().Lookup("jaeger_addr"))
 	viper.BindPFlag("listen_addr", rootCmd.Flags().Lookup("listen-addr"))
 	viper.BindPFlag("env", rootCmd.Flags().Lookup("env"))
+	viper.BindPFlag("enable_profiling", rootCmd.Flags().Lookup("enable-profiling"))
 }
 
 // initConfig reads in config file and ENV variables if set.
