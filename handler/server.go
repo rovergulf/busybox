@@ -184,17 +184,17 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) healthCheck(w http.ResponseWriter, r *http.Request) {
-	writeResponse(w, map[string]interface{}{
+	writeResponse(w, map[string]any{
 		"healthy":   true,
 		"timestamp": time.Now().Format(time.RFC1123),
 	})
 }
 
 func (h *Handler) mainHandler(w http.ResponseWriter, r *http.Request) {
-	var result []interface{}
+	var result []any
 	for name, values := range r.Header {
 		h.logger.Infof("%s: %s", name, values)
-		result = append(result, map[string]interface{}{
+		result = append(result, map[string]any{
 			"name":  name,
 			"value": r.Header.Values(name),
 		})
@@ -203,7 +203,7 @@ func (h *Handler) mainHandler(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, result)
 }
 
-func writeResponse(w http.ResponseWriter, v interface{}) {
+func writeResponse(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	response, err := json.Marshal(v)
