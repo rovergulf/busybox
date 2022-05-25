@@ -1,5 +1,7 @@
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/rovergulf/utils)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Test](https://github.com/rovergulf/busybox/actions/workflows/go_test.yml/badge.svg)](https://github.com/rovergulf/busybox/actions/workflows/go_test.yml)
+[![Docker build](https://github.com/rovergulf/busybox/actions/workflows/go_test.yml/badge.svg)](https://github.com/rovergulf/busybox/actions/workflows/ghcr.yml)
 
 # busybox
 

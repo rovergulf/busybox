@@ -3,11 +3,13 @@
 set -e
 
 RUN_STARTED=$(date)
-REGISTRY_IMAGE="${OCI_MAIN_ROVERGULF}/busybox"
-VERSION=$(cat ./version | awk '{print $1}')
+REGISTRY_IMAGE="${DOCKER_REGISTRY}/busybox"
+VERSION=$(git describe --tags)
 
 echo "[$(date)] Start building ${REGISTRY_IMAGE}:${VERSION} docker image"
-docker build --no-cache -t $REGISTRY_IMAGE:$VERSION -t $REGISTRY_IMAGE:latest . || exit 1
+docker build --no-cache \
+  -t $REGISTRY_IMAGE:$VERSION -t $REGISTRY_IMAGE:latest . \
+  --build-arg APP_VERSION=$(git describe --tags) || exit 1
 
 
 echo "[$(date)] push image to registry"

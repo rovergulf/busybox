@@ -22,6 +22,8 @@ import (
 	_ "net/http/pprof"
 )
 
+var AppVersion string
+
 const (
 	headersSep = ", "
 )
@@ -185,6 +187,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, map[string]any{
+		"version":   AppVersion,
 		"healthy":   true,
 		"timestamp": time.Now().Format(time.RFC1123),
 	})
