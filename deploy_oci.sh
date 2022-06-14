@@ -3,7 +3,7 @@
 set -e
 
 RUN_STARTED=$(date)
-REGISTRY_IMAGE="${DOCKER_REGISTRY}/busybox"
+REGISTRY_IMAGE="ghcr.io/rovergulf/busybox"
 VERSION=$(git describe --tags)
 
 echo "[$(date)] Start building ${REGISTRY_IMAGE}:${VERSION} docker image"
