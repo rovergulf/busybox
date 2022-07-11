@@ -5,15 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
-	"github.com/uber/jaeger-client-go"
-	"github.com/uber/jaeger-client-go/config"
-	"github.com/uber/jaeger-lib/metrics/prometheus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -53,8 +55,7 @@ var allowedMethods = []string{
 
 type Handler struct {
 	logger *zap.SugaredLogger
-	tracer opentracing.Tracer
-	closer io.Closer
+	tracer *tracesdk.TracerProvider
 	router *mux.Router
 }
 
@@ -86,27 +87,25 @@ func (h *Handler) initTracer() error {
 	if len(jaegerUrl) > 0 {
 		jaegerSrvName := fmt.Sprintf("busybox-%s", viper.GetString("env"))
 		address := viper.GetString("jaeger_addr")
-		traceTransport, err := jaeger.NewUDPTransport(address, 0)
+		exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(jaegerUrl)))
 		if err != nil {
-			h.logger.Errorf("Unable to init tracing transport: %s", err)
 			return err
 		}
 
-		tracer, closer, err := config.Configuration{
-			ServiceName: jaegerSrvName,
-		}.NewTracer(
-			config.Sampler(jaeger.NewConstSampler(true)),
-			config.Reporter(jaeger.NewRemoteReporter(traceTransport, jaeger.ReporterOptions.Logger(jaeger.StdLogger))),
-			config.Metrics(prometheus.New()),
+		h.tracer = tracesdk.NewTracerProvider(
+			tracesdk.WithSampler(tracesdk.AlwaysSample()),
+			// Always be sure to batch in production.
+			tracesdk.WithBatcher(exp),
+			// Record information about this application in a Resource.
+			tracesdk.WithResource(resource.NewWithAttributes(
+				semconv.SchemaURL,
+				semconv.ServiceNameKey.String(jaegerSrvName),
+			)),
 		)
-		if err != nil {
-			h.logger.Errorf("Unable to start tracer: %s", err)
-			return err
-		}
+
+		otel.SetTracerProvider(h.tracer)
 
 		h.logger.Debugw("Jaeger tracing client initialized", "collector_url", address)
-		h.tracer = tracer
-		h.closer = closer
 	}
 
 	return nil
@@ -142,8 +141,8 @@ func (h *Handler) GracefulShutdown(sig string) {
 		h.logger.Warnf("Shutdown signal '%s' received", sig)
 	}
 
-	if h.closer != nil {
-		h.closer.Close()
+	if h.tracer != nil {
+		h.tracer.Shutdown(context.Background())
 	}
 
 	os.Exit(0)
@@ -172,12 +171,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, "x_forwarded_for", r.Header.Get("X-Forwarded-For"))
 
 	if h.tracer != nil {
-		span := h.tracer.StartSpan(strings.TrimPrefix(r.URL.Path, "/"))
-		span.SetTag("host", r.Host)
-		span.SetTag("method", r.Method)
-		span.SetTag("path", r.URL.Path)
-		defer span.Finish()
-		ctx = opentracing.ContextWithSpan(ctx, span)
+		var span trace.Span
+		ctx, span = h.tracer.Tracer("http-interceptor").Start(ctx, r.URL.Path)
+		span.SetAttributes(attribute.String("host", r.Host))
+		span.SetAttributes(attribute.String("method", r.Method))
+		defer span.End()
 	}
 
 	h.logger.Infow("Handling request", "method", r.Method, "path", r.URL.Path, "query", r.URL.RawQuery)
