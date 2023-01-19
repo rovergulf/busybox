@@ -70,11 +70,11 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.busybox.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().String("jaeger-trace", os.Getenv("JAEGER_TRACE"), "Jaeger tracing collector address")
+	rootCmd.Flags().String("jaeger-trace", os.Getenv("JAEGER_TRACING_COLLECTOR"), "Jaeger tracing collector address")
 	rootCmd.Flags().String("env", "dev", "App environment")
 	rootCmd.Flags().Bool("log-json", false, "Enable JSON logging")
 	rootCmd.Flags().Bool("log-stacktrace", false, "Enable logger stacktrace")

@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 	"go.opentelemetry.io/otel"
@@ -20,11 +21,13 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	_ "net/http/pprof"
 )
 
 var AppVersion string
+
+var (
+	runDate = time.Now()
+)
 
 const (
 	headersSep = ", "
@@ -56,7 +59,7 @@ var allowedMethods = []string{
 type Handler struct {
 	logger *zap.SugaredLogger
 	tracer *tracesdk.TracerProvider
-	router *mux.Router
+	router chi.Router
 }
 
 func (h *Handler) initLogger() error {
@@ -77,6 +80,7 @@ func (h *Handler) initLogger() error {
 		return err
 	}
 
+	zap.ReplaceGlobals(l)
 	h.logger = l.Sugar()
 
 	return nil
@@ -120,14 +124,22 @@ func (h *Handler) Run() error {
 		return err
 	}
 
-	r := mux.NewRouter()
+	r := chi.NewRouter()
+	//r.Use(middleware.Logger) // i'm sure i have to log request response statuses in some way
 
+	// Go profiler
 	if viper.GetBool("enable_profiling") {
-		r.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
+		r.Mount("/debug/pprof", middleware.Profiler())
 	}
-	r.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet)
-	r.HandleFunc("/health", h.healthCheck).Methods(http.MethodGet)
-	r.HandleFunc("/debug", h.mainHandler).Methods(http.MethodGet)
+
+	// Prometheus metrics
+	r.Mount("/metrics", promhttp.Handler())
+	// service routes
+	r.Get("/health", h.healthCheck)
+	r.Route("/debug", func(cr chi.Router) {
+		cr.Get("/", h.mainHandler)
+		cr.Post("/", h.mainHandler)
+	})
 
 	h.router = r
 
@@ -184,7 +196,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) healthCheck(w http.ResponseWriter, r *http.Request) {
+	now := time.Now().Unix()
 	writeResponse(w, map[string]any{
+		"alive":     now - runDate.Unix(),
 		"version":   AppVersion,
 		"healthy":   true,
 		"timestamp": time.Now().Format(time.RFC1123),
@@ -192,16 +206,33 @@ func (h *Handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) mainHandler(w http.ResponseWriter, r *http.Request) {
-	var result []any
+	results := make(map[string]any)
+	var headers []any
 	for name, values := range r.Header {
-		h.logger.Infof("%s: %s", name, values)
-		result = append(result, map[string]any{
-			"name":  name,
-			"value": r.Header.Values(name),
+		//h.logger.Debugf("%s: %s", name, values)
+		headers = append(headers, map[string]any{
+			"name":   name,
+			"values": values,
 		})
 	}
+	results["headers"] = headers
 
-	writeResponse(w, result)
+	results["url"] = r.URL
+	results["user_agent"] = r.UserAgent()
+	results["remote_addr"] = r.RemoteAddr
+
+	if r.Method == http.MethodPost {
+		var bodyData map[string]any
+		decoder := json.NewDecoder(r.Body)
+		if err := decoder.Decode(&bodyData); err != nil {
+			h.logger.Errorw("Unable to decode body data", "err", err)
+			results["body_decoding_error"] = err.Error()
+		} else {
+			results["body"] = bodyData
+		}
+	}
+
+	writeResponse(w, results)
 }
 
 func writeResponse(w http.ResponseWriter, v any) {
