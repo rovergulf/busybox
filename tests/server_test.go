@@ -37,7 +37,7 @@ func TestServerHealth(t *testing.T) {
 		t.Fatalf("Failed to complete request: %s", err)
 	}
 
-	var result map[string]interface{}
+	var result map[string]any
 	decoder := json.NewDecoder(res.Body)
 	if err := decoder.Decode(&result); err != nil {
 		t.Errorf("Unable to unmarshal request response")
@@ -58,7 +58,7 @@ func TestServerDebugRequest(t *testing.T) {
 		t.Fatalf("Failed to complete request: %s", err)
 	}
 
-	var result []interface{}
+	var result map[string]any
 	decoder := json.NewDecoder(res.Body)
 	if err := decoder.Decode(&result); err != nil {
 		t.Errorf("Unable to unmarshal request response")
