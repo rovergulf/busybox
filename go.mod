@@ -3,7 +3,7 @@ module github.com/rovergulf/busybox
 go 1.19
 
 require (
-	github.com/go-chi/chi/v5 v5.0.8
+	github.com/go-chi/chi/v5 v5.0.10
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/spf13/cobra v1.7.0
